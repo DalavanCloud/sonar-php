@@ -47,6 +47,10 @@ public class QualifiedName {
     this.nameElements = nameBuilder.build();
   }
 
+  protected QualifiedName(QualifiedName owner, String member) {
+    this(owner.nameElements, member);
+  }
+
   /**
    * Utility method to conveniently create QualifiedName objects with PHP namespace notation.
    * Ex: qualifiedName("Foo\Bar\FooBar")

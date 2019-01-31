@@ -94,7 +94,14 @@ public class SymbolTableImpl implements SymbolTable {
     return symbol;
   }
 
-  Symbol createUndeclaredSymbol(QualifiedName fullyQualifiedName, Symbol.Kind kind) {
+  MemberSymbolImpl declareMemberSymbol(IdentifierTree name, Symbol.Kind kind, Scope scope, TypeSymbol owner) {
+    MemberSymbolImpl memberSymbol = new MemberSymbolImpl(name, kind, scope, owner);
+    symbolByQualifiedName.put(memberSymbol.qualifiedName(), memberSymbol);
+    addSymbol(name, scope, memberSymbol);
+    return memberSymbol;
+  }
+
+  SymbolImpl createUndeclaredSymbol(QualifiedName fullyQualifiedName, Symbol.Kind kind) {
     UndeclaredSymbol undeclaredSymbol = new UndeclaredSymbol(fullyQualifiedName, kind);
     symbolByQualifiedName.put(fullyQualifiedName, undeclaredSymbol);
     return undeclaredSymbol;

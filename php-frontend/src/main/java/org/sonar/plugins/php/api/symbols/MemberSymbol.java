@@ -19,15 +19,11 @@
  */
 package org.sonar.plugins.php.api.symbols;
 
-import java.util.List;
-
 /**
- * Symbol for class, trait or interface
+ * Symbol for method, field or constant of {@link TypeSymbol}
  */
-public interface TypeSymbol extends Symbol {
-  Symbol superClass();
+public interface MemberSymbol extends Symbol {
 
-  List<Symbol> interfaces();
+  TypeSymbol owner();
 
-  List<MemberSymbol> members();
 }

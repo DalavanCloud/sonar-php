@@ -21,6 +21,7 @@ package org.sonar.php.tree.symbols;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.sonar.plugins.php.api.symbols.MemberSymbol;
 import org.sonar.plugins.php.api.symbols.QualifiedName;
 import org.sonar.plugins.php.api.symbols.Symbol;
 import org.sonar.plugins.php.api.symbols.TypeSymbol;
@@ -30,7 +31,7 @@ public class TypeSymbolImpl extends SymbolImpl implements TypeSymbol {
 
   private Symbol superClass;
   private List<Symbol> interfaces = new ArrayList<>();
-  private List<Symbol> members = new ArrayList<>();
+  private List<MemberSymbol> members = new ArrayList<>();
 
   public TypeSymbolImpl(IdentifierTree declaration, Scope scope, QualifiedName qualifiedName) {
     super(declaration, Symbol.Kind.CLASS, scope, qualifiedName);
@@ -44,7 +45,7 @@ public class TypeSymbolImpl extends SymbolImpl implements TypeSymbol {
     interfaces.add(iface);
   }
 
-  void addMember(Symbol member) {
+  void addMember(MemberSymbol member) {
     members.add(member);
   }
 
@@ -59,7 +60,7 @@ public class TypeSymbolImpl extends SymbolImpl implements TypeSymbol {
   }
 
   @Override
-  public List<Symbol> members() {
+  public List<MemberSymbol> members() {
     return members;
   }
 }

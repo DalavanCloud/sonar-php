@@ -25,6 +25,7 @@ import org.assertj.core.api.ListAssert;
 import org.junit.Test;
 import org.sonar.php.ParsingTestUtils;
 import org.sonar.php.tree.impl.PHPTree;
+import org.sonar.plugins.php.api.symbols.MemberSymbol;
 import org.sonar.plugins.php.api.symbols.Symbol;
 import org.sonar.plugins.php.api.symbols.Symbol.Kind;
 import org.sonar.plugins.php.api.symbols.TypeSymbol;
@@ -381,6 +382,20 @@ public class SymbolTableImplTest extends ParsingTestUtils {
     assertThat(iface2).isInstanceOf(UndeclaredSymbol.class);
   }
 
+  @Test
+  public void test_class_symbol_members() {
+    SymbolTableImpl symbolTable = symbolTableFor("<?php  namespace N { class A { const A; function foo() {} }  } class B { function bar() {} }");
+    TypeSymbol classA = (TypeSymbol) symbolTable.getSymbol("n\\a");
+    assertThat(classA.kind()).isEqualTo(Kind.CLASS);
+    assertThat(classA.members()).extracting(m -> m.qualifiedName().toString())
+      .containsExactly("n\\a::a", "n\\a::foo");
+    assertThat(classA.members()).extracting(MemberSymbol::owner).allMatch(classA::equals);
+
+    TypeSymbol classB = (TypeSymbol) symbolTable.getSymbol("b");
+    assertThat(classB.members()).extracting(m -> m.qualifiedName().toString())
+      .containsExactly("b::bar");
+    assertThat(classB.members()).extracting(MemberSymbol::owner).allMatch(classB::equals);
+  }
 
   private static ListAssert<String> assertClassSymbols(SymbolTableImpl symbolTable, String... fullyQualifiedNames) {
     return assertThat(symbolTable.getSymbols(Kind.CLASS)).extracting(s -> s.qualifiedName().toString())
