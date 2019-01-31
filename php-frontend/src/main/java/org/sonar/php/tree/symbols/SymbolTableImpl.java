@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import org.sonar.plugins.php.api.symbols.QualifiedName;
 import org.sonar.plugins.php.api.symbols.Symbol;
 import org.sonar.plugins.php.api.symbols.SymbolTable;
+import org.sonar.plugins.php.api.symbols.TypeSymbol;
 import org.sonar.plugins.php.api.tree.CompilationUnitTree;
 import org.sonar.plugins.php.api.tree.Tree;
 import org.sonar.plugins.php.api.tree.expression.IdentifierTree;
@@ -75,9 +76,21 @@ public class SymbolTableImpl implements SymbolTable {
     } else {
       symbol = new SymbolImpl(name, kind, scope);
     }
+    addSymbol(name, scope, symbol);
+    return symbol;
+  }
+
+  private void addSymbol(IdentifierTree name, Scope scope, Symbol symbol) {
     symbols.add(symbol);
     scope.addSymbol(symbol);
     associateSymbol(name, symbol);
+  }
+
+  TypeSymbolImpl declareTypeSymbol(IdentifierTree name, Scope scope, QualifiedName namespace) {
+    QualifiedName qualifiedName = namespace.resolve(name.text());
+    TypeSymbolImpl symbol = new TypeSymbolImpl(name, scope, qualifiedName);
+    symbolByQualifiedName.put(qualifiedName, symbol);
+    addSymbol(name, scope, symbol);
     return symbol;
   }
 

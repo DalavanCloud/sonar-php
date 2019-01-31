@@ -69,6 +69,8 @@ import org.sonar.plugins.php.api.tree.statement.UseClauseTree;
 import org.sonar.plugins.php.api.tree.statement.UseStatementTree;
 import org.sonar.plugins.php.api.visitors.PHPVisitorCheck;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class SymbolVisitor extends PHPVisitorCheck {
 
   private static final Set<String> BUILT_IN_VARIABLES = ImmutableSet.of(
@@ -199,21 +201,36 @@ public class SymbolVisitor extends PHPVisitorCheck {
 
   @Override
   public void visitClassDeclaration(ClassDeclarationTree tree) {
-    Symbol classSymbol = symbolTable.getSymbol(tree.name());
+    TypeSymbolImpl classSymbol = (TypeSymbolImpl) symbolTable.getSymbol(tree.name());
+    checkNotNull(classSymbol, "Symbol for %s not found", tree);
     enterScope(tree);
     classScope = currentScope;
     scan(tree.name());
     NamespaceNameTree superClass = tree.superClass();
     if (superClass != null) {
-      Symbol superClassSymbol = symbolTable.getSymbol(getFullyQualifiedName(superClass, Symbol.Kind.CLASS));
+      Symbol superClassSymbol = lookupOrCreateUndeclaredSymbol(superClass);
       classScope.superClassScope = scopeBySymbol.get(superClassSymbol);
+      classSymbol.setSuperClass(superClassSymbol);
     }
     scopeBySymbol.put(classSymbol, classScope);
-    scan(tree.superInterfaces());
+    tree.superInterfaces().forEach(ifaceTree -> {
+      Symbol ifaceSymbol = lookupOrCreateUndeclaredSymbol(ifaceTree);
+      classSymbol.addInterface(ifaceSymbol);
+    });
     createMemberSymbols(tree);
     scan(tree.members());
     classScope = null;
     leaveScope();
+  }
+
+  private Symbol lookupOrCreateUndeclaredSymbol(NamespaceNameTree superClass) {
+    QualifiedName qualifiedName = getFullyQualifiedName(superClass, Symbol.Kind.CLASS);
+    Symbol superClassSymbol = symbolTable.getSymbol(qualifiedName);
+    if (superClassSymbol != null) {
+      return superClassSymbol;
+    } else {
+      return symbolTable.createUndeclaredSymbol(qualifiedName, Symbol.Kind.CLASS);
+    }
   }
 
   @Override

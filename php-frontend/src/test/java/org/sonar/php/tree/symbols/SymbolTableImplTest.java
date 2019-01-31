@@ -27,6 +27,7 @@ import org.sonar.php.ParsingTestUtils;
 import org.sonar.php.tree.impl.PHPTree;
 import org.sonar.plugins.php.api.symbols.Symbol;
 import org.sonar.plugins.php.api.symbols.Symbol.Kind;
+import org.sonar.plugins.php.api.symbols.TypeSymbol;
 import org.sonar.plugins.php.api.tree.CompilationUnitTree;
 import org.sonar.plugins.php.api.tree.Tree;
 import org.sonar.plugins.php.api.tree.declaration.FunctionDeclarationTree;
@@ -348,6 +349,38 @@ public class SymbolTableImplTest extends ParsingTestUtils {
     assertThat(symbol).isInstanceOf(UndeclaredSymbol.class);
     assertSymbolUsages(symbolTable, "f", 1, 1, 1);
   }
+
+  @Test
+  public void test_type_symbol() {
+    SymbolTableImpl symbolTable = symbolTableFor("<?php  namespace N { class A {} class B extends A {} } ");
+    Symbol classA = symbolTable.getSymbol("n\\a");
+    Symbol classB = symbolTable.getSymbol("n\\b");
+    assertThat(classA).isInstanceOf(TypeSymbol.class);
+    assertThat(classB).isInstanceOf(TypeSymbol.class);
+    assertThat(((TypeSymbol) classB).superClass()).isEqualTo(classA);
+  }
+
+  @Test
+  public void test_undeclared_superclass() {
+    SymbolTableImpl symbolTable = symbolTableFor("<?php  namespace N { class B extends A {} } ");
+    Symbol classA = symbolTable.getSymbol("n\\a");
+    Symbol classB = symbolTable.getSymbol("n\\b");
+    assertThat(classA).isInstanceOf(UndeclaredSymbol.class);
+    assertThat(classB).isInstanceOf(TypeSymbol.class);
+    assertThat(((TypeSymbol) classB).superClass()).isEqualTo(classA);
+  }
+
+  @Test
+  public void test_class_symbol_with_interfaces() {
+    SymbolTableImpl symbolTable = symbolTableFor("<?php  namespace N { class B implements I1, I2 {} interface I1 {} } ");
+    TypeSymbol classB = (TypeSymbol) symbolTable.getSymbol("n\\b");
+    Symbol iface1 = symbolTable.getSymbol("n\\i1");
+    Symbol iface2 = symbolTable.getSymbol("n\\i2");
+    assertThat(classB.interfaces()).containsExactly(iface1, iface2);
+    assertThat(iface1).isInstanceOf(TypeSymbol.class);
+    assertThat(iface2).isInstanceOf(UndeclaredSymbol.class);
+  }
+
 
   private static ListAssert<String> assertClassSymbols(SymbolTableImpl symbolTable, String... fullyQualifiedNames) {
     return assertThat(symbolTable.getSymbols(Kind.CLASS)).extracting(s -> s.qualifiedName().toString())
